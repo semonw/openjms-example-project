@@ -1,0 +1,65 @@
+<project name="OpenJMS" default="start">
+    <property file="build.properties" />
+
+    <property name="sender_target" value="${sender_build_dir}/target" />
+    <property name="listener_target" value="${listener_build_dir}/target" />
+
+    <property name="sender_target_file" value="${sender_target}/${sender_jar}" />
+    <property name="listener_target_file" value="${listener_target}/${listener_jar}" />
+
+    <!-- 定义路径，编译java文件时用到的jar包。 加载lib下的所有jar包-->
+    <path id="project.lib">
+        <fileset dir="${basedir}/lib">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- bootstrap -->
+    <target name="start">
+        <antcall target="external" />
+        <antcall target="deploy" />
+    </target>
+
+    <!-- 外部调用 -->
+    <!-- invocation external build.xml -->
+    <target name="external">
+        <ant antfile="build.xml" dir="${sender_build_dir}"/>
+        <ant antfile="build.xml" dir="${listener_build_dir}"/>
+    </target>
+    <!-- start export rcp product -->
+    <target name="init">
+        <mkdir dir="${buildDirectory}" />
+        <mkdir dir="${buildDirectory}/libs" />
+        <mkdir dir="${buildDirectory}/plugins" />
+<!--        <copy todir="${buildDirectory}/plugins">-->
+<!--            <fileset dir="../../">-->
+<!--                &lt;!&ndash; include source codes needed to be built.&ndash;&gt;-->
+<!--                <include name="HelloRCP/**" />-->
+<!--            </fileset>-->
+<!--        </copy>-->
+    </target>
+
+    <target name="build" depends="clean, init" />
+    <!-- end rcp export product-->
+    <!-- merge configure file -->
+    <target name="deploy" depends="build">
+        <!-- -->
+        <copy todir="${buildDirectory}" file="${sender_target_file}" />
+        <copy todir="${buildDirectory}" file="${listener_target_file}" />
+        <copy todir="${buildDirectory}" file="${basedir}/jndi.properties" />
+
+        <copy todir="${buildDirectory}/libs" >
+            <fileset dir="${basedir}/libs">
+                <include name="*.jar" />
+            </fileset>
+        </copy>
+    </target>
+    <!-- end merge configure file -->
+    <!-- clean all temp file-->
+    <target name="clean">
+<!--        <delete dir="${buildDirectory}" />-->
+        <delete>
+            <fileset dir="${buildDirectory}" includes="*"/>
+        </delete>
+    </target>
+</project>
