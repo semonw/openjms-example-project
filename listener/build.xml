@@ -1,0 +1,108 @@
+<project name="listener" default="build">
+
+    <property name="buildDirectory" value="${basedir}/target" />
+    <property name="classesDir" value="${basedir}/target/classes" />
+
+    <!-- 定义路径，编译java文件时用到的jar包。 加载lib下的所有jar包-->
+    <path id="project.lib">
+        <fileset dir="${basedir}/../libs">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <!--构造打包时Class-Path需要的路径 -->
+    <!--pathconvert用于对目录进行组合 property即这个组合的名字，pathsep作用是各个文件之间的分隔符，
+        如果不写，在windows平台默认是分号。但时在MANIFEST.MF这个文件中，各个jar包之间要用空格区分，
+        因此。这里就写成空格了
+    -->
+    <pathconvert property="libs" pathsep=" ">
+        <!--mapper,对路径组合方式进行控制-->
+        <mapper>
+            <!--chainedmapper 作用是联合多个mapper-->
+            <chainedmapper>
+                <!--过滤文件，将路径去掉，只保留文件名-->
+                <flattenmapper />
+                <!--过滤+转换器，将所有的文件名前面都加上一个lib，我们知道lib目录下面有jar包，
+                    lib/*的作用其实是将jar包名与路径进行组合形成如：lib/google.jar这样的相对路径
+                 -->
+                <globmapper from="*" to="libs/*" />
+            </chainedmapper>
+        </mapper>
+        <!--按照mapper定义的格式组合lib目录下面的所有jar文件，形成诸如lib/jar1.jar lib/jar2.jar的字符串-->
+        <fileset dir="${basedir}/../libs">
+            <include name="*.jar" />
+        </fileset>
+    </pathconvert>
+
+    <!-- bootstrap -->
+    <target name="start">
+        <!--<antcall target="external" /> -->
+        <antcall target="deploy" />
+    </target>
+
+    <!-- 外部调用 -->
+    <!-- invocation external build.xml -->
+    <!--    <target name="external">-->
+    <!--        <ant antfile="build.xml" dir="${external_build}"/>-->
+    <!--    </target>-->
+    <!-- start export rcp product -->
+    <target name="init">
+        <mkdir dir="${buildDirectory}" />
+        <mkdir dir="${classesDir}"/>
+        <mkdir dir="${buildDirectory}/classes" />
+        <mkdir dir="${buildDirectory}/resources" />
+    </target>
+
+    <!-- 定义任务，编译src文件夹中的java文件，编译后的class文件放到创建的文件夹下。 -->
+    <target name="compile" depends="clean"  description="编译~~~~" >
+        <javac srcdir="${basedir}/src" destdir="${classesDir}" includeantruntime="false" encoding="UTF-8">
+            <classpath refid="project.lib">
+            </classpath>
+        </javac>
+        <!--由于compile只能编译java文件，so需要我们将src下的其他文件copy到classes下-->
+        <!-- 定义任务，将xml 和 配置文件 copy到src下。 -->
+        <copy todir="${basedir}/resources" >
+            <fileset dir="${basedir}/src/main/resources">
+                <include name="**/*.xml"/>
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- 创建时间戳 -->
+    <tstamp />
+
+    <!--定义jarfilename，准备进行打包操作。其中ant.project.name是ant默认的一个变量，值为最上面定义的project的name
+    ${DSTAMP}为日期，格式为20111123；${TSTAMP}为时间，格式为2256，表示22点56分。
+        -->
+<!--    <property name="jarfilename" value="${ant.project.name}-${DSTAMP}${TSTAMP}.jar" />-->
+    <property name="jarfilename" value="${buildDirectory}/${ant.project.name}.jar" />
+
+    <!--打包开始，名字为jar，依赖任务为compile-->
+    <target name="jar" depends="compile" description="make jar file">
+        <!--jar操作，jarfile指定jar包存放路径，basedir为编译后的class的目录-->
+        <jar jarfile="${jarfilename}" basedir="${classesDir}">
+            <!--为jar包指定manifest，当然，如果jar包不需要打成runnable的形式，manifest可以不要-->
+            <manifest>
+                <!--指定main-class-->
+                <attribute name="Main-Class" value="cn.typedefine.jms.Listener" />
+                <!--指定Class-Path-->
+                <attribute name="Class-Path" value="${libs}">
+                </attribute>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="build" depends="clean, init, compile, jar" />
+    <!-- end rcp export product-->
+    <!-- merge configure file -->
+    <target name="deploy" depends="build">
+        <!-- -->
+    </target>
+    <!-- end merge configure file -->
+    <!-- clean all temp file-->
+    <target name="clean">
+        <delete dir="${buildDirectory}" />
+        <delete dir="${basedir}/classes" />
+    </target>
+</project>
