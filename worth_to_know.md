@@ -21,6 +21,10 @@ Ant和OpenJMS一样是比较老的技术。Ant相对来说也比较原始，但�
 build.xml 通过external脚本调用起来
   module A : build.xml
   module B : build.xml
+
+
+### maven-antrun-plugin
+这是另外一个思路。
   
 
 
